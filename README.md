@@ -23,7 +23,10 @@ webapp/
 ├── server_control.py       # Server control utilities
 ├── README.md               # This file
 ├── PROGRAM_DESCRIPTION.md  # Detailed program documentation
-└── .gitignore             # Git ignore rules
+├── .gitignore             # Git ignore rules
+├── mainmenu.png           # Screenshot: Main menu screen
+├── aichat.png             # Screenshot: AI Agent interview
+└── heath.png              # Screenshot: Mental Health interview
 ```
 
 ## Prerequisites
@@ -53,6 +56,20 @@ webapp/
    ```
    http://localhost:8000
    ```
+
+## Screenshots
+
+### Main Menu
+![Main Menu](mainmenu.png)
+*The starting menu where users select their interview type*
+
+### AI Agent Interview
+![AI Agent Chat](aichat.png)
+*Interactive chat interface for AI Agent interview*
+
+### Mental Health Interview
+![Mental Health Chat](heath.png)
+*Mental Health check-in interview interface*
 
 ## Usage
 
