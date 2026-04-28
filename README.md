@@ -84,4 +84,4 @@ webapp/
 
 ## License
 
-MIT License (or specify your license)
+Apache License 2.0 - See LICENSE file for details.
