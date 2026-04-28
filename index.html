@@ -23,8 +23,17 @@ const mentalHealthQuestions = [
     { id: 5, text: "What kind of support or resources would be most helpful for you right now?", followUp: "What would make it easier for you to access the help you need?" }
 ];
 
+const promptGenQuestions = [
+    { id: 1, key: "projectType", text: "What kind of project do you want to build? (for example: a website, mobile app, desktop tool, script, game, chatbot, etc.)", followUp: "What is the main thing this project needs to do? Describe it in one or two sentences." },
+    { id: 2, key: "audience", text: "Who is this project for? Who will use it?", followUp: "What problem does it solve for them, or what need does it meet?" },
+    { id: 3, key: "tech", text: "Do you have a preferred programming language, framework, or tech stack? (or just say 'not sure' and AI will suggest one)", followUp: "Are there any tools, APIs, or services you already know you want to use or connect to?" },
+    { id: 4, key: "experience", text: "How would you describe your coding experience level? (beginner, some experience, intermediate, advanced)", followUp: "Have you built anything similar before, or is this a new type of project for you?" },
+    { id: 5, key: "features", text: "What are the most important features this project needs to have?", followUp: "Are there any features you want to make sure are NOT included, or any constraints to keep in mind (budget, time, complexity)?" }
+];
+
 let currentQuestionIndex = 0;
 let userAnswers = {};
+let promptGenAnswers = {};
 let currentMode = 'ai-agent';
 
 function showMenu() {
@@ -56,32 +65,40 @@ function addUserMessage(text) {
 }
 
 function askQuestion(index) {
-    const questionsArray = currentMode === 'ai-agent' ? aiAgentQuestions : mentalHealthQuestions;
+    const questionsArray = currentMode === 'ai-agent' ? aiAgentQuestions : currentMode === 'mental-health' ? mentalHealthQuestions : promptGenQuestions;
     const answerForm = document.getElementById('answer-form');
     const userInput = document.getElementById('user-input');
-    
+
     if (index < questionsArray.length) {
         const questionObj = questionsArray[index];
         addBotMessage(questionObj.text);
-        
+
         answerForm.onsubmit = function(e) {
             e.preventDefault();
             const answer = userInput.value.trim();
             if (answer) {
                 addUserMessage(answer);
-                userAnswers['q' + index] = answer;
+                if (currentMode === 'prompt-gen') {
+                    promptGenAnswers[questionObj.key + '_main'] = answer;
+                } else {
+                    userAnswers['q' + index] = answer;
+                }
                 userInput.value = '';
-                
+
                 setTimeout(function() {
                     addBotMessage(questionObj.followUp);
                 }, 500);
-                
+
                 answerForm.onsubmit = function(e2) {
                     e2.preventDefault();
                     const followUpAnswer = userInput.value.trim();
                     if (followUpAnswer) {
                         addUserMessage(followUpAnswer);
-                        userAnswers['q' + index + '_followup'] = followUpAnswer;
+                        if (currentMode === 'prompt-gen') {
+                            promptGenAnswers[questionObj.key + '_detail'] = followUpAnswer;
+                        } else {
+                            userAnswers['q' + index + '_followup'] = followUpAnswer;
+                        }
                         userInput.value = '';
                         currentQuestionIndex++;
                         setTimeout(function() {
@@ -101,8 +118,10 @@ function askQuestion(index) {
 function generateSuggestions() {
     if (currentMode === 'ai-agent') {
         generateAIAgentSuggestions();
-    } else {
+    } else if (currentMode === 'mental-health') {
         generateMentalHealthSuggestions();
+    } else {
+        generatePrompt();
     }
 }
 
@@ -168,21 +187,84 @@ function generateMentalHealthSuggestions() {
     suggestionsDiv.appendChild(finalMessage);
 }
 
+function generatePrompt() {
+    addBotMessage("Great! I have everything I need. Here is your custom AI starter prompt:");
+
+    const a = promptGenAnswers;
+    const projectType = a.projectType_main || 'a project';
+    const projectGoal = a.projectType_detail || '';
+    const audience = a.audience_main || 'general users';
+    const audienceProblem = a.audience_detail || '';
+    const tech = a.tech_main || 'no specific tech preference';
+    const techDetail = a.tech_detail || '';
+    const experience = a.experience_main || 'some experience';
+    const experienceDetail = a.experience_detail || '';
+    const features = a.features_main || '';
+    const constraints = a.features_detail || '';
+
+    const prompt = `I want to build ${projectType}. ${projectGoal ? projectGoal + ' ' : ''}The target users are ${audience}${audienceProblem ? ' — ' + audienceProblem : ''}.
+
+My tech preference: ${tech}${techDetail ? '. Additional tools/services: ' + techDetail : ''}.
+
+My experience level: ${experience}${experienceDetail ? '. ' + experienceDetail : ''}.
+
+${features ? 'Key features needed: ' + features + '.' : ''}${constraints ? ' Constraints to keep in mind: ' + constraints + '.' : ''}
+
+Please help me get started on this project. Give me:
+1. A recommended tech stack and architecture for this project
+2. A clear project structure and folder layout
+3. The first steps to set up the development environment
+4. Starter code for the core foundation
+5. A list of the main tasks to build this out, in order
+
+Keep explanations clear and matched to my experience level.`;
+
+    const answerForm = document.getElementById('answer-form');
+    const suggestionsDiv = document.getElementById('suggestions');
+    answerForm.classList.add('hidden');
+    suggestionsDiv.classList.remove('hidden');
+    suggestionsDiv.innerHTML = '<h2>Your AI Starter Prompt</h2><p style="color:#9ab8cc;margin-bottom:12px;font-size:14px;">Copy and paste this into ChatGPT, Claude, or any AI tool to kick off your project.</p><textarea id="generated-prompt" readonly></textarea><button onclick="copyPrompt()" id="copy-btn">Copy Prompt</button>';
+
+    document.getElementById('generated-prompt').value = prompt;
+}
+
+function copyPrompt() {
+    const textarea = document.getElementById('generated-prompt');
+    textarea.select();
+    navigator.clipboard.writeText(textarea.value).then(function() {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy Prompt'; }, 2000);
+    }).catch(function() {
+        document.execCommand('copy');
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy Prompt'; }, 2000);
+    });
+}
+
 function startInterview(mode) {
     currentMode = mode;
     currentQuestionIndex = 0;
     userAnswers = {};
+    promptGenAnswers = {};
+    document.getElementById('suggestions').classList.add('hidden');
+    document.getElementById('suggestions').innerHTML = '';
+    document.getElementById('answer-form').classList.remove('hidden');
+    document.getElementById('chat-box').innerHTML = '';
     showInterview();
-    
-    // Update the page title based on mode
+
     if (mode === 'ai-agent') {
         document.getElementById('page-title').textContent = 'AI Agent Interview';
         addBotMessage("Hello! I'm here to help you discover how an AI agent could benefit you. Let's start with a few questions about your work and goals.");
-    } else {
+    } else if (mode === 'mental-health') {
         document.getElementById('page-title').textContent = 'Mental Health Interview';
         addBotMessage("Hello! I'm here to support you with a mental health check-in. Let's start with a few questions about how you've been feeling.");
+    } else {
+        document.getElementById('page-title').textContent = 'AI Prompt Generator';
+        addBotMessage("Hello! I'll help you build a prompt that kicks off your project with AI. Answer a few questions and I'll generate a ready-to-use prompt you can paste into any AI tool.");
     }
-    
+
     setTimeout(function() {
         askQuestion(0);
     }, 1000);
@@ -202,11 +284,13 @@ window.onload = function() {
             <div class="menu-options">
                 <button class="menu-btn" onclick="startInterview('ai-agent')">AI Agent Interview</button>
                 <button class="menu-btn" onclick="startInterview('mental-health')">Mental Health Interview</button>
+                <button class="menu-btn" onclick="startInterview('prompt-gen')">AI Prompt Generator</button>
             </div>
         </div>
         
         <!-- Interview Screen (hidden initially) -->
         <div id="interview-screen" style="display: none;">
+            <button onclick="showMenu()" style="background:none;color:#9ab8cc;border:1px solid #3a4a55;padding:6px 16px;font-size:14px;border-radius:8px;margin-bottom:16px;">← Back</button>
             <h1 id="page-title">AI Agent Interview</h1>
             <div id="chat-box" class="chat-box"></div>
             <form id="answer-form" class="answer-form">

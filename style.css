@@ -195,6 +195,36 @@ button:active {
     display: none;
 }
 
+/* Prompt generator output */
+#generated-prompt {
+    width: 100%;
+    min-height: 280px;
+    background-color: #1a1a1a;
+    color: #c8e6c9;
+    border: 1px solid #3a5a3a;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    margin-bottom: 12px;
+}
+
+#copy-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background-color: #2e7d32;
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+#copy-btn:hover {
+    background-color: #1b5e20;
+}
+
 /* Scrollbar styling */
 .chat-box::-webkit-scrollbar {
     width: 8px;
